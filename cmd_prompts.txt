@@ -1,0 +1,74 @@
+###############################################
+# 🚀 PROJECT RUN COMMANDS – IR + AI + LOGGING #
+###############################################
+
+# ---------- 1. OPEN MOSQUITTO BROKER ----------
+# (Run in Administrator CMD — not PowerShell)
+cd "C:\Program Files\mosquitto"
+mosquitto -c "C:\Users\Rohil\Desktop\mosquitto_custom.conf" -v
+
+
+# ---------- 2. UPLOAD ESP8266 CODE ----------
+# (Do this only once unless code changes)
+# Open Arduino IDE → open file:
+#   esp_ir_presence_v2.ino
+# Tools → Board → NodeMCU 1.0 (ESP-12E Module)
+# Tools → Port → COM6  (or your correct COM port)
+# Then click “Upload”
+# Open Serial Monitor at 115200 baud
+# Confirm messages like:
+#   WiFi connected!
+#   IP Address: 192.168.137.xxx
+#   Connected to MQTT!
+
+
+# ---------- 3. OPEN A NEW CMD WINDOW ----------
+# Navigate to your project folder with Python files
+cd "C:\Users\Rohil\Desktop\python"
+
+
+# ---------- 4. ACTIVATE YOUR PYTHON VIRTUAL ENVIRONMENT ----------
+.\venv\Scripts\activate
+
+
+# ---------- 5. RUN THE NEW PYTHON SCRIPT ----------
+# OPTION A → If you’re using PHONE IP CAMERA:
+python pc_ai_recog_with_logging.py --broker 192.168.137.1
+
+# OPTION B → If you’re using LAPTOP WEBCAM:
+python pc_ai_recog_with_logging.py --broker 192.168.137.1 --camera 0
+
+
+# ---------- 6. OBSERVE TERMINALS ----------
+# CMD 1 (Mosquitto): shows MQTT traffic logs
+# Arduino Serial Monitor: shows IR + Panic + LED state
+# Python CMD: shows AI detection logs + CSV logging info
+
+
+# ---------- 7. VERIFY FLOW ----------
+# Step A: Move hand in front of IR sensor
+#         → ESP prints “Presence detected → enter”
+#         → Python starts face recognition window
+#
+# Step B: Show authorized face
+#         → Python prints “Authorized: rohil”
+#         → LED on ESP turns ON
+#
+# Step C: Move away from sensor
+#         → ESP prints “Presence gone → leave”
+#         → Python stops recognition (idle mode)
+#
+# Step D: Press Panic Button
+#         → ESP publishes “esp/panic: Panic Button Pressed!”
+#         → Python prints 🚨 PANIC ALERT RECEIVED 🚨
+#
+# Step E: Open `events_log.csv` (in same folder)
+#         → Check logged events with timestamps
+
+
+# ---------- 8. TO STOP EVERYTHING ----------
+# In Python terminal: press Ctrl + C or ‘q’ to exit window
+# In Mosquitto terminal: press Ctrl + C
+# Close Arduino Serial Monitor
+# Deactivate Python venv if needed:
+deactivate

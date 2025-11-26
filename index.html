@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Face Recognition Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #0a0f1e;
+      font-family: 'Inter', sans-serif;
+      color: #e2e8f0;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+    
+    /* Premium dark gradient background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(ellipse at top, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(59, 130, 246, 0.08) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    /* Subtle grid pattern */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    .navbar {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 1.5rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+    
+    .navbar-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .navbar h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+    
+    .navbar h2::before {
+      content: '🔒';
+      font-size: 1.6rem;
+    }
+    
+    .navbar p {
+      color: #64748b;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-top: 0.2rem;
+    }
+    
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.6rem 1.2rem;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #10b981;
+      transition: all 0.3s ease;
+    }
+    
+    .status-badge:hover {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.95); }
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Premium Header */
+    .header {
+      text-align: center;
+      margin-bottom: 4rem;
+      padding: 2rem 0;
+      opacity: 0;
+      animation: fadeInUp 0.8s ease forwards;
+    }
+    
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+    }
+    
+    .header h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #f8fafc 0%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.04em;
+      margin-bottom: 0.8rem;
+      line-height: 1.1;
+    }
+    
+    .header p { 
+      color: #64748b; 
+      font-size: 1.1rem;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+    
+    .header .subtitle {
+      display: inline-block;
+      margin-top: 1.2rem;
+      padding: 0.7rem 1.8rem;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #60a5fa;
+      letter-spacing: 0.02em;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 16px;
+      padding: 2.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      opacity: 0;
+      animation: slideInUp 0.6s ease forwards;
+      box-shadow: 0 8px 32px rgba(16, 185, 129, 0.05), 0 2px 8px rgba(0, 0, 0, 0.45);
+    }
+    
+    .stat-card:nth-child(1) { animation-delay: 0.1s; }
+    .stat-card:nth-child(2) { animation-delay: 0.2s; }
+    .stat-card:nth-child(3) { animation-delay: 0.3s; }
+    
+    @keyframes slideInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      from {
+        opacity: 0;
+        transform: translateY(40px);
+      }
+    }
+    
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    
+    .stat-card:hover::before {
+      opacity: 1;
+    }
+    
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+    }
+    
+    .stat-card:hover::after {
+      opacity: 0.15;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-8px);
+      border-image: linear-gradient(90deg, var(--accent-color), transparent) 1;
+      box-shadow: 0 18px 44px 3px rgba(16,185,129,0.11), 0 0 0 1px rgba(16,185,129,0.04) inset;
+    }
+
+    .stat-card.auth { 
+      --accent-color: #10b981; 
+      --accent-glow: rgba(16, 185, 129, 0.4);
+    }
+    .stat-card.unauth { 
+      --accent-color: #ef4444;
+      --accent-glow: rgba(239, 68, 68, 0.4);
+    }
+    .stat-card.noface { 
+      --accent-color: #f59e0b;
+      --accent-glow: rgba(245, 158, 11, 0.4);
+    }
+    
+    .stat-label { 
+      font-size: 0.875rem; 
+      color: #94a3b8;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .stat-value { 
+      font-size: 3.4rem; 
+      font-weight: 800;
+      line-height: 1;
+      color: var(--accent-color);
+      letter-spacing: -0.03em;
+    }
+
+    .chart-box, .table-box {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      transition: all 0.4s ease;
+      opacity: 0;
+      animation: fadeInUp 0.8s ease forwards;
+      animation-delay: 0.4s;
+      box-shadow: 0 6px 20px rgba(16,185,129,0.12);
+    }
+    
+    .chart-box:hover, .table-box:hover {
+      border-color: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      transform: translateY(-4px);
+    }
+
+    .chart-box {
+      opacity: 0;
+      animation: fadeIn 1.2s cubic-bezier(.9,0,.55,1) 0.4s forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.96);}
+      to { opacity: 1; transform: scale(1);}
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.8rem;
+      color: #f8fafc;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      position: relative;
+      padding-bottom: 0.4em;
+    }
+
+    .section-title::after {
+      content: '';
+      display: block;
+      position: absolute;
+      left: 0; bottom: -2px;
+      width: 36px; height: 3px;
+      background: linear-gradient(90deg, #10b981, #60a5fa);
+      border-radius: 2px;
+      opacity: 0.6;
+    }
+
+    table { 
+      width: 100%; 
+      border-collapse: collapse;
+      box-shadow: 0 2px 10px rgba(30,41,59,0.14);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    thead { 
+      background: rgba(59, 130, 246, 0.08);
+      border-radius: 8px;
+    }
+    
+    th { 
+      padding: 1rem 1.5rem;
+      color: #60a5fa;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.81rem;
+      letter-spacing: 0.13em;
+      text-align: left;
+      border-right: 1.5px solid rgba(255,255,255,0.04);
+    }
+    
+    td {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      border-right: 1.5px solid rgba(255,255,255,0.04);
+      color: #cbd5e1;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+    
+    tbody tr {
+      transition: all 0.2s ease;
+    }
+    
+    tbody tr:hover {
+      background: rgba(59, 130, 246, 0.09);
+      border-left: 4px solid #60a5fa;
+    }
+    
+    /* Last Event Section */
+    .last-event {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid rgba(59, 130, 246, 0.15);
+      position: relative;
+      overflow: hidden;
+      animation-delay: 0s;
+    }
+    
+    .last-event::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 60%);
+      pointer-events: none;
+    }
+    
+    .last-event-content {
+      position: relative;
+      z-index: 1;
+    }
+    
+    #lastEventName {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #f8fafc;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    
+    #lastEventType {
+      color: #94a3b8;
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 0.3rem;
+    }
+    
+    #lastEventTime {
+      color: #64748b;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    
+    #lastEventIndicator {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #38bdf8 0%, #10b981 70%);
+      box-shadow: 0 0 24px 6px #60a5fa55;
+      border: 2px solid #94a3b8;
+      box-shadow: 0 0 24px 6px #60a5fa55;
+    }
+    
+    #lastEventIndicator::before {
+      content: '';
+      position: absolute;
+      left: 50%; top: 56%;
+      transform: translate(-50%,-50%);
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      box-shadow: 0 0 36px 11px #10b98144;
+      z-index: 0;
+      opacity: 0.5;
+    }
+    
+    #lastEventIndicator::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: inherit;
+      transform: translate(-50%, -50%);
+      animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+    
+    @keyframes ping {
+      75%, 100% {
+        transform: translate(-50%, -50%) scale(1.8);
+        opacity: 0;
+      }
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: rgba(59, 130, 246, 0.3);
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(59, 130, 246, 0.5);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV BAR -->
+  <div class="navbar">
+    <div class="navbar-content">
+      <div>
+        <h2>SECURITY DASHBOARD</h2>
+        <p>Face Recognition System</p>
+      </div>
+      <div class="status-badge">
+        <div class="status-dot"></div>
+        <span>ACTIVE</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- ⭐ Last Event Section -->
+    <div class="table-box last-event" style="
+         margin-bottom:2.5rem; 
+         display:flex; 
+         justify-content:space-between; 
+         align-items:center;">
+      
+      <div class="last-event-content">
+        <h3 class="section-title">🧑 Last Detected Event</h3>
+        <p id="lastEventName">—</p>
+        <p id="lastEventType">—</p>
+        <p id="lastEventTime">—</p>
+      </div>
+
+      <div id="lastEventIndicator"></div>
+      
+    </div>
+
+    <!-- HEADER -->
+    <div class="header">
+      <h1>Face Recognition Analytics</h1>
+      <p>Real-time monitoring and event tracking</p>
+      <div class="subtitle">ADVANCED SECURITY DASHBOARD</div>
+    </div>
+
+    <!-- COUNTERS -->
+    <div class="stats-grid">
+      <div class="stat-card auth">
+        <p class="stat-label">✓ AUTHORIZED ACCESS</p>
+        <p id="authCount" class="stat-value">0</p>
+      </div>
+
+      <div class="stat-card unauth">
+        <p class="stat-label">✕ UNAUTHORIZED ACCESS</p>
+        <p id="unauthCount" class="stat-value">0</p>
+      </div>
+
+      <div class="stat-card noface">
+        <p class="stat-label">? NO FACE DETECTED</p>
+        <p id="nofaceCount" class="stat-value">0</p>
+      </div>
+    </div>
+
+    <!-- CHART -->
+    <div class="chart-box">
+      <h3 class="section-title">📊 Event Timeline</h3>
+      <canvas id="eventChart"></canvas>
+    </div>
+
+    <!-- RECENT ACTIVITY TABLE -->
+    <div class="table-box">
+      <h3 class="section-title">📋 Recent Activity Log</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Event Type</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody id="logTable"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
