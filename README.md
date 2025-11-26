@@ -1,4 +1,4 @@
-ESP8266 Forklift Safety System
+➡️ ESP8266 Forklift Safety System
 
 A simple IoT safety system using ESP8266 to monitor forklift speed, detect driver presence, authenticate the operator, and send events to a laptop for logging and AI-based safety analysis.
 
